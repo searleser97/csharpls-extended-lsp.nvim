@@ -130,7 +130,28 @@ M.handle_locations = function(locations, offset_encoding)
     if not vim.tbl_isempty(fetched) then
         if #locations > 1 then
             utils.set_qflist_locations(locations, offset_encoding)
-            vim.api.nvim_command("copen")
+            -- vim.api.nvim_command("copen")
+            local pickers = require "telescope.pickers"
+            local conf = require("telescope.config").values
+            local finders = require "telescope.finders"
+            local make_entry = require "telescope.make_entry"
+            local flattened_results = locations
+            vim.list_extend(flattened_results, locations)
+            local items = vim.lsp.util.locations_to_items(flattened_results, offset_encoding)
+            print(vim.inspect(locations))
+            pickers
+            .new({}, {
+              prompt_title = "LSP Definition",
+              finder = finders.new_table {
+                results = items,
+                entry_maker = make_entry.gen_from_quickfix({}),
+              },
+              previewer = conf.qflist_previewer({}),
+              sorter = conf.generic_sorter({}),
+              push_cursor_on_edit = true,
+              push_tagstack_on_edit = true,
+            })
+            :find()
             return true
         else
             -- utils.jump_to_location(locations[1], fetched[locations[1].uri].bufnr)
